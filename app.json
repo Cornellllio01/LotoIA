@@ -32,6 +32,11 @@
     "plugins": [
       "expo-router"
     ],
-    "scheme": "lotoia"
+    "scheme": "lotoia",
+    "extra": {
+      "eas": {
+        "projectId": "a0414960-06e2-4f2f-abeb-145d56072d00"
+      }
+    }
   }
 }
