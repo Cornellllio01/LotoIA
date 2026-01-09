@@ -30,7 +30,7 @@ export default function HomeScreen() {
 
             // Buscar últimos 10 resultados para estatísticas
             const resultados = await ResultadosAPI.buscarUltimos(10);
-            const stats = EstatisticasService.calcularEstatisticas(resultados, 7);
+            const stats = EstatisticasService.calcularEstatisticas(resultados, 10);
             setEstatisticas(stats);
         } catch (error) {
             console.error('Erro ao carregar dados:', error);
@@ -111,7 +111,7 @@ export default function HomeScreen() {
                         icon="🔥"
                         titulo="Mais Quente"
                         valor={maisQuente ? `#${maisQuente.numero}` : '-'}
-                        subtitulo={maisQuente ? `${maisQuente.ocorrencias}x em 7 jogos` : ''}
+                        subtitulo={maisQuente ? `${maisQuente.ocorrencias}x (Concursos ${estatisticas.primeiroConcursoAnalizado} ao ${estatisticas.ultimoConcursoAnalizado})` : ''}
                         cor="error"
                     />
                     <EstatisticasCard

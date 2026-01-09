@@ -17,6 +17,18 @@ class ResultadosAPI {
 
         try {
             const response = await fetch(`${this.baseURL}`);
+
+            // Verificar se a resposta é JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                console.warn('API retornou HTML ao invés de JSON. Usando dados mock.');
+                return this.getMockUltimo();
+            }
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
             const data = await response.json();
             return this.formatarResultado(data);
         } catch (error) {
@@ -35,11 +47,23 @@ class ResultadosAPI {
 
         try {
             const response = await fetch(`${this.baseURL}/${numeroConcurso}`);
+
+            // Verificar se a resposta é JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                console.warn('API retornou HTML ao invés de JSON. Usando dados mock.');
+                return this.getMockResultado(numeroConcurso);
+            }
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
             const data = await response.json();
             return this.formatarResultado(data);
         } catch (error) {
             console.error('Erro ao buscar concurso:', error);
-            return null;
+            return this.getMockResultado(numeroConcurso);
         }
     }
 
@@ -77,11 +101,18 @@ class ResultadosAPI {
     // FORMATAR RESULTADO DA API
     // ====================================
     formatarResultado(data) {
+        // Mapear premiações da API da Caixa para o formato esperado
+        const premiacoes = (data.listaRateioPremio || []).map(p => ({
+            acertos: p.numeroDeGanhadores !== undefined ? p.faixa : p.acertos,
+            ganhadores: p.numeroDeGanhadores || p.ganhadores || 0,
+            valorPremio: p.valorPremio || 0,
+        }));
+
         return {
             concurso: data.numero,
             data: data.dataApuracao,
             numeros: data.listaDezenas?.map(n => parseInt(n)) || [],
-            premiacoes: data.listaRateioPremio || [],
+            premiacoes: premiacoes,
             acumulado: data.acumulado || false,
             valorAcumulado: data.valorAcumuladoProximoConcurso || 0,
         };

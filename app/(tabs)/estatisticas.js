@@ -21,7 +21,7 @@ export default function EstatisticasScreen() {
     const carregarEstatisticas = async () => {
         try {
             const resultados = await ResultadosAPI.buscarUltimos(10);
-            const stats = EstatisticasService.calcularEstatisticas(resultados, 7);
+            const stats = EstatisticasService.calcularEstatisticas(resultados, 10);
             setEstatisticas(stats);
         } catch (error) {
             console.error('Erro ao carregar estatísticas:', error);
@@ -86,7 +86,7 @@ export default function EstatisticasScreen() {
 
             {/* Gráfico de Frequência */}
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}>📊 Frequência (Últimos 7 Jogos)</Text>
+                <Text style={styles.sectionTitle}>📊 Frequência (Concursos {estatisticas.primeiroConcursoAnalizado} ao {estatisticas.ultimoConcursoAnalizado})</Text>
                 <GraficoFrequencia
                     frequencia={estatisticas.frequencia}
                     maxOcorrencias={maxOcorrencias}
@@ -162,21 +162,44 @@ export default function EstatisticasScreen() {
                         cor="success"
                     />
                 </View>
+                <View style={styles.statsGrid}>
+                    <EstatisticasCard
+                        icon="⚖️"
+                        titulo="Pares"
+                        valor={estatisticas.paresImpares.pares.media}
+                        subtitulo={`${estatisticas.paresImpares.pares.percentual}%`}
+                        cor="primary"
+                    />
+                    <EstatisticasCard
+                        icon="⚖️"
+                        titulo="Ímpares"
+                        valor={estatisticas.paresImpares.impares.media}
+                        subtitulo={`${estatisticas.paresImpares.impares.percentual}%`}
+                        cor="secondary"
+                    />
+                </View>
             </View>
 
-            {/* Pares Frequentes */}
-            {estatisticas.pares && estatisticas.pares.length > 0 && (
+            {/* Quinas Frequentes */}
+            {estatisticas.quinas && estatisticas.quinas.length > 0 && (
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>👥 Pares Mais Frequentes</Text>
+                    <Text style={styles.sectionTitle}>👥 Quinas Mais Frequentes (Concursos {estatisticas.primeiroConcursoAnalizado} ao {estatisticas.ultimoConcursoAnalizado})</Text>
                     <View style={styles.paresCard}>
-                        {estatisticas.pares.slice(0, 5).map((par, index) => (
+                        {estatisticas.quinas.slice(0, 5).map((quina, index) => (
                             <View key={index} style={styles.parItem}>
-                                <View style={styles.parNumeros}>
-                                    <NumerosBola numero={par.numeros[0]} size="small" />
-                                    <Text style={styles.parSeparador}>+</Text>
-                                    <NumerosBola numero={par.numeros[1]} size="small" />
+                                <View style={styles.quinaNumeros}>
+                                    {quina.numeros.map((n, idx) => (
+                                        <React.Fragment key={idx}>
+                                            <Text style={styles.quinaNumeroText}>
+                                                {n.toString().padStart(2, '0')}
+                                            </Text>
+                                            {idx < quina.numeros.length - 1 && (
+                                                <Text style={styles.quinaDot}>•</Text>
+                                            )}
+                                        </React.Fragment>
+                                    ))}
                                 </View>
-                                <Text style={styles.parOcorrencias}>{par.ocorrencias}x</Text>
+                                <Text style={styles.parOcorrencias}>{quina.ocorrencias}x</Text>
                             </View>
                         ))}
                     </View>
@@ -282,5 +305,25 @@ const styles = StyleSheet.create({
         color: Colors.dark.text,
         fontSize: 16,
         fontWeight: '600',
+    },
+    quinaNumeros: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 8,
+        gap: 4,
+    },
+    quinaNumeroText: {
+        color: Colors.dark.primary,
+        fontSize: 14,
+        fontWeight: 'bold',
+        fontFamily: 'monospace',
+    },
+    quinaDot: {
+        color: Colors.dark.textSecondary,
+        fontSize: 10,
+        opacity: 0.5,
     },
 });

@@ -16,6 +16,8 @@ export default function EstatisticasCard({ icon, titulo, valor, subtitulo, cor =
                 return [colors.error, '#DC2626'];
             case 'info':
                 return [colors.info, '#2563EB'];
+            case 'secondary':
+                return [colors.secondary, '#7C3AED'];
             default:
                 return [colors.primary, colors.secondary];
         }

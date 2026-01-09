@@ -9,7 +9,9 @@ class EstatisticasService {
 
         const frequencia = this.calcularFrequencia(resultados, ultimosN);
         const atrasos = this.calcularAtrasos(resultados);
-        const pares = this.analisarPares(resultados, ultimosN);
+        const quinas = this.analisarQuinas(resultados, ultimosN);
+        const paresImpares = this.analisarParesImpares(resultados, ultimosN);
+        const quartetos = this.analisarQuartetos(resultados, ultimosN);
         const distribuicao = this.analisarDistribuicao(resultados, ultimosN);
         const sequencias = this.analisarSequencias(resultados, ultimosN);
         const ciclos = this.detectarCiclos(resultados);
@@ -17,12 +19,16 @@ class EstatisticasService {
         return {
             frequencia,
             atrasos,
-            pares,
+            quinas,
+            paresImpares,
+            quartetos,
             distribuicao,
             sequencias,
             ciclos,
-            totalConcursos: ultimosN,  // ✅ CORRETO (usa o parâmetro que é 7)
+            totalConcursos: ultimosN,
             ultimoConcurso: resultados[0]?.concurso || 0,
+            primeiroConcursoAnalizado: resultados[Math.min(ultimosN, resultados.length) - 1]?.concurso || 0,
+            ultimoConcursoAnalizado: resultados[0]?.concurso || 0,
         };
     }
 
@@ -123,10 +129,78 @@ class EstatisticasService {
     }
 
     // ====================================
-    // ANÁLISE DE PARES
     // ====================================
-    analisarPares(resultados, ultimosN) {
-        const pares = {};
+    // ANÁLISE DE PARES VS ÍMPARES (EVEN/ODD)
+    // ====================================
+    analisarParesImpares(resultados, ultimosN) {
+        const recentes = resultados.slice(0, ultimosN);
+        let totalPares = 0;
+        let totalImpares = 0;
+
+        recentes.forEach(resultado => {
+            const pares = resultado.numeros.filter(n => n % 2 === 0).length;
+            totalPares += pares;
+            totalImpares += (resultado.numeros.length - pares);
+        });
+
+        const total = totalPares + totalImpares;
+
+        return {
+            pares: {
+                total: totalPares,
+                media: (totalPares / ultimosN).toFixed(1),
+                percentual: ((totalPares / total) * 100).toFixed(1),
+            },
+            impares: {
+                total: totalImpares,
+                media: (totalImpares / ultimosN).toFixed(1),
+                percentual: ((totalImpares / total) * 100).toFixed(1),
+            },
+        };
+    }
+
+    // ====================================
+    // ANÁLISE DE QUINAS (5 NÚMEROS)
+    // ====================================
+    analisarQuinas(resultados, ultimosN) {
+        const quinas = {};
+        const recentes = resultados.slice(0, ultimosN);
+
+        recentes.forEach(resultado => {
+            const numeros = resultado.numeros.sort((a, b) => a - b);
+
+            for (let i = 0; i < numeros.length - 4; i++) {
+                for (let j = i + 1; j < numeros.length - 3; j++) {
+                    for (let k = j + 1; k < numeros.length - 2; k++) {
+                        for (let l = k + 1; l < numeros.length - 1; l++) {
+                            for (let m = l + 1; m < numeros.length; m++) {
+                                const quinaKey = `${numeros[i]}-${numeros[j]}-${numeros[k]}-${numeros[l]}-${numeros[m]}`;
+                                quinas[quinaKey] = (quinas[quinaKey] || 0) + 1;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        return Object.entries(quinas)
+            .map(([quina, ocorrencias]) => {
+                const nums = quina.split('-').map(n => parseInt(n));
+                return {
+                    numeros: nums,
+                    ocorrencias,
+                    percentual: (ocorrencias / ultimosN) * 100,
+                };
+            })
+            .sort((a, b) => b.ocorrencias - a.ocorrencias)
+            .slice(0, 20); // Top 20 quinas
+    }
+
+    // ====================================
+    // ANÁLISE DE DUPLAS (MANTIDA PARA USO INTERNO SE NECESSÁRIO)
+    // ====================================
+    analisarDuplas(resultados, ultimosN) {
+        const duplas = {};
         const recentes = resultados.slice(0, ultimosN);
 
         recentes.forEach(resultado => {
@@ -135,12 +209,12 @@ class EstatisticasService {
             for (let i = 0; i < numeros.length; i++) {
                 for (let j = i + 1; j < numeros.length; j++) {
                     const par = `${numeros[i]}-${numeros[j]}`;
-                    pares[par] = (pares[par] || 0) + 1;
+                    duplas[par] = (duplas[par] || 0) + 1;
                 }
             }
         });
 
-        return Object.entries(pares)
+        return Object.entries(duplas)
             .map(([par, ocorrencias]) => {
                 const [num1, num2] = par.split('-').map(n => parseInt(n));
                 return {
@@ -150,7 +224,43 @@ class EstatisticasService {
                 };
             })
             .sort((a, b) => b.ocorrencias - a.ocorrencias)
-            .slice(0, 20); // Top 20 pares
+            .slice(0, 30);
+    }
+
+    // ====================================
+    // ANÁLISE DE QUARTETOS (4 NÚMEROS)
+    // ====================================
+    analisarQuartetos(resultados, ultimosN) {
+        const quartetos = {};
+        const recentes = resultados.slice(0, ultimosN);
+
+        recentes.forEach(resultado => {
+            const numeros = resultado.numeros.sort((a, b) => a - b);
+
+            // Gerar todas as combinações de 4 números
+            for (let i = 0; i < numeros.length - 3; i++) {
+                for (let j = i + 1; j < numeros.length - 2; j++) {
+                    for (let k = j + 1; k < numeros.length - 1; k++) {
+                        for (let l = k + 1; l < numeros.length; l++) {
+                            const quarteto = `${numeros[i]}-${numeros[j]}-${numeros[k]}-${numeros[l]}`;
+                            quartetos[quarteto] = (quartetos[quarteto] || 0) + 1;
+                        }
+                    }
+                }
+            }
+        });
+
+        return Object.entries(quartetos)
+            .map(([quarteto, ocorrencias]) => {
+                const nums = quarteto.split('-').map(n => parseInt(n));
+                return {
+                    numeros: nums,
+                    ocorrencias,
+                    percentual: (ocorrencias / ultimosN) * 100,
+                };
+            })
+            .sort((a, b) => b.ocorrencias - a.ocorrencias)
+            .slice(0, 20); // Top 20 quartetos
     }
 
     // ====================================
@@ -285,7 +395,12 @@ class EstatisticasService {
         return {
             frequencia,
             atrasos: [],
-            pares: [],
+            quinas: [],
+            paresImpares: {
+                pares: { total: 0, media: '0', percentual: '0' },
+                impares: { total: 0, media: '0', percentual: '0' },
+            },
+            quartetos: [],
             distribuicao: {
                 baixos: { total: 0, media: '0', percentual: '0' },
                 medios: { total: 0, media: '0', percentual: '0' },

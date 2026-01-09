@@ -26,7 +26,7 @@ export default function GeradorScreen() {
     const carregarEstatisticas = async () => {
         try {
             const resultados = await ResultadosAPI.buscarUltimos(10);
-            const stats = EstatisticasService.calcularEstatisticas(resultados, 7);
+            const stats = EstatisticasService.calcularEstatisticas(resultados, 10);
             setEstatisticas(stats);
         } catch (error) {
             console.error('Erro ao carregar estatísticas:', error);
