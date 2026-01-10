@@ -33,6 +33,12 @@
       "expo-router"
     ],
     "scheme": "lotoia",
+    "updates": {
+      "url": "https://u.expo.dev/a0414960-06e2-4f2f-abeb-145d56072d00"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "extra": {
       "eas": {
         "projectId": "a0414960-06e2-4f2f-abeb-145d56072d00"
