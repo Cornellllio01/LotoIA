@@ -449,7 +449,7 @@ export class AnalisadorIA {
         sections.push({
             icon: '📊',
             titulo: 'Soma Total',
-            texto: `Soma de ${metricas.soma}, ${somaStatus} dentro da faixa ideal (240-280).`,
+            texto: `Soma de ${metricas.soma}, ${somaStatus} dentro da faixa ideal (180-210).`,
         });
 
         // Seção 7: Distribuição

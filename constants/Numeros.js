@@ -13,7 +13,7 @@ export const REGRAS_OTIMAS = {
   IMPARES: { min: 7, max: 8 },
   PRIMOS: { min: 5, max: 6 },
   FIBONACCI: { min: 4, max: 5 },
-  SOMA: { min: 240, max: 280 },
+  SOMA: { min: 180, max: 210 },
   SEQUENCIAS: { min: 4, max: 5 },
   REPETICOES: { min: 8, max: 10 },
 };

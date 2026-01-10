@@ -101,20 +101,37 @@ class ResultadosAPI {
     // FORMATAR RESULTADO DA API
     // ====================================
     formatarResultado(data) {
+        if (!data) return null;
+
         // Mapear premiações da API da Caixa para o formato esperado
-        const premiacoes = (data.listaRateioPremio || []).map(p => ({
-            acertos: p.numeroDeGanhadores !== undefined ? p.faixa : p.acertos,
-            ganhadores: p.numeroDeGanhadores || p.ganhadores || 0,
-            valorPremio: p.valorPremio || 0,
-        }));
+        // Na Lotofácil: Faixa 1 = 15 acertos, Faixa 2 = 14 acertos, ..., Faixa 5 = 11 acertos
+        const premiacoes = (data.listaRateioPremio || []).map(p => {
+            let acertos = 0;
+            if (p.faixa === 1) acertos = 15;
+            else if (p.faixa === 2) acertos = 14;
+            else if (p.faixa === 3) acertos = 13;
+            else if (p.faixa === 4) acertos = 12;
+            else if (p.faixa === 5) acertos = 11;
+            else acertos = p.acertos || (16 - p.faixa);
+
+            return {
+                acertos: acertos,
+                ganhadores: p.numeroDeGanhadores || 0,
+                valorPremio: p.valorPremio || 0,
+            };
+        }).filter(p => p.acertos >= 11);
 
         return {
             concurso: data.numero,
             data: data.dataApuracao,
             numeros: data.listaDezenas?.map(n => parseInt(n)) || [],
-            premiacoes: premiacoes,
+            premiacoes: premiacoes.sort((a, b) => b.acertos - a.acertos),
             acumulado: data.acumulado || false,
             valorAcumulado: data.valorAcumuladoProximoConcurso || 0,
+            localSorteio: data.localSorteio || '',
+            proximoConcurso: data.numeroConcursoProximo,
+            dataProximoConcurso: data.dataPróximoConcurso,
+            estimativaPremio: data.valorEstimadoPróximoConcurso || 0
         };
     }
 

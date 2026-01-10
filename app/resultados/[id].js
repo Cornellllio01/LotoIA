@@ -1,36 +1,84 @@
+import React, { useState, useEffect } from 'react';
 import { useLocalSearchParams, Stack } from 'expo-router';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import NumerosBola from '../../components/NumerosBola';
+import ResultadosAPI from '../../services/ResultadosAPI';
 import { formatarConcurso, formatarData, formatarMoeda } from '../../utils/formatadores';
 
 export default function ResultadoDetalhesScreen() {
     const { id } = useLocalSearchParams();
     const colors = Colors.dark;
 
-    // Mock data - em produção, buscar do storage ou API
-    const resultado = {
-        concurso: parseInt(id),
-        data: '28/12/2024',
-        numeros: [1, 2, 4, 5, 7, 9, 11, 13, 15, 17, 18, 20, 22, 23, 25],
-        premiacoes: [
-            { acertos: 15, ganhadores: 2, valorPremio: 850000 },
-            { acertos: 14, ganhadores: 458, valorPremio: 1250 },
-            { acertos: 13, ganhadores: 12450, valorPremio: 30 },
-            { acertos: 12, ganhadores: 98750, valorPremio: 12 },
-            { acertos: 11, ganhadores: 325000, valorPremio: 6 },
-        ],
-        acumulado: false,
+    const [loading, setLoading] = useState(true);
+    const [resultado, setResultado] = useState(null);
+    const [erro, setErro] = useState(null);
+
+    useEffect(() => {
+        if (id) {
+            carregarDetalhes();
+        }
+    }, [id]);
+
+    const carregarDetalhes = async () => {
+        try {
+            setLoading(true);
+            const data = await ResultadosAPI.buscarPorConcurso(parseInt(id));
+            if (data) {
+                setResultado(data);
+            } else {
+                setErro('Resultado não encontrado');
+            }
+        } catch (error) {
+            console.error('Erro ao carregar detalhes do concurso:', error);
+            setErro('Erro ao carregar dados');
+        } finally {
+            setLoading(false);
+        }
     };
 
+    if (loading) {
+        return (
+            <View style={[styles.container, styles.centered]}>
+                <ActivityIndicator size="large" color={colors.primary} />
+                <Text style={styles.loadingText}>Carregando detalhes...</Text>
+            </View>
+        );
+    }
+
+    if (erro || !resultado) {
+        return (
+            <View style={[styles.container, styles.centered]}>
+                <Text style={styles.errorText}>{erro || 'Algo deu errado'}</Text>
+            </View>
+        );
+    }
+
     return (
-        <>
-            <Stack.Screen options={{ title: formatarConcurso(resultado.concurso) }} />
-            <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        <View style={styles.container}>
+            <Stack.Screen options={{
+                title: formatarConcurso(resultado.concurso),
+                headerTitleStyle: { color: colors.text },
+                headerStyle: { backgroundColor: colors.background },
+                headerTintColor: colors.primary
+            }} />
+
+            <ScrollView contentContainerStyle={styles.content}>
                 {/* Header */}
                 <View style={styles.header}>
                     <Text style={styles.concurso}>{formatarConcurso(resultado.concurso)}</Text>
                     <Text style={styles.data}>{formatarData(resultado.data)}</Text>
+
+                    {resultado.acumulado && (
+                        <View style={styles.acumuladoBadge}>
+                            <Text style={styles.acumuladoText}>ACUMULOU!</Text>
+                            {resultado.valorAcumulado > 0 && (
+                                <Text style={styles.acumuladoValor}>
+                                    {formatarMoeda(resultado.valorAcumulado)}
+                                </Text>
+                            )}
+                        </View>
+                    )}
                 </View>
 
                 {/* Números Sorteados */}
@@ -67,8 +115,16 @@ export default function ResultadoDetalhesScreen() {
                         </View>
                     ))}
                 </View>
+
+                {/* Info Adicional */}
+                {resultado.localSorteio && (
+                    <View style={styles.infoAdicional}>
+                        <Text style={styles.infoLabel}>Local do Sorteio:</Text>
+                        <Text style={styles.infoValue}>{resultado.localSorteio}</Text>
+                    </View>
+                )}
             </ScrollView>
-        </>
+        </View>
     );
 }
 
@@ -77,43 +133,90 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: Colors.dark.background,
     },
+    centered: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    loadingText: {
+        color: Colors.dark.textSecondary,
+        marginTop: 12,
+        fontSize: 16,
+    },
+    errorText: {
+        color: Colors.dark.error,
+        fontSize: 16,
+        textAlign: 'center',
+    },
     content: {
         padding: 16,
-        paddingBottom: 32,
+        paddingBottom: 40,
     },
     header: {
         alignItems: 'center',
-        marginBottom: 24,
-        paddingVertical: 20,
+        marginBottom: 32,
+        paddingVertical: 24,
+        backgroundColor: Colors.dark.card,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: Colors.dark.border,
     },
     concurso: {
-        fontSize: 32,
+        fontSize: 36,
         fontWeight: 'bold',
         color: Colors.dark.text,
-        marginBottom: 4,
+        marginBottom: 8,
     },
     data: {
-        fontSize: 16,
+        fontSize: 18,
         color: Colors.dark.textSecondary,
     },
+    acumuladoBadge: {
+        marginTop: 16,
+        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: Colors.dark.error,
+        alignItems: 'center',
+    },
+    acumuladoText: {
+        color: Colors.dark.error,
+        fontSize: 14,
+        fontWeight: 'bold',
+        textTransform: 'uppercase',
+    },
+    acumuladoValor: {
+        color: Colors.dark.text,
+        fontSize: 20,
+        fontWeight: 'bold',
+        marginTop: 4,
+    },
     section: {
-        marginBottom: 24,
+        marginBottom: 32,
     },
     sectionTitle: {
-        fontSize: 18,
+        fontSize: 20,
         fontWeight: 'bold',
         color: Colors.dark.text,
-        marginBottom: 12,
+        marginBottom: 16,
+        paddingLeft: 4,
     },
     numerosContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        gap: 10,
+        gap: 12,
         justifyContent: 'center',
+        backgroundColor: Colors.dark.card,
+        padding: 20,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: Colors.dark.border,
     },
     premiacaoCard: {
         backgroundColor: Colors.dark.card,
-        borderRadius: 12,
+        borderRadius: 16,
         padding: 16,
         marginBottom: 12,
         borderWidth: 1,
@@ -123,7 +226,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 8,
+        marginBottom: 4,
     },
     premiacaoAcertos: {
         fontSize: 16,
@@ -139,4 +242,20 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: Colors.dark.textSecondary,
     },
+    infoAdicional: {
+        marginTop: 8,
+        flexDirection: 'row',
+        gap: 8,
+        justifyContent: 'center',
+    },
+    infoLabel: {
+        color: Colors.dark.textSecondary,
+        fontSize: 13,
+    },
+    infoValue: {
+        color: Colors.dark.text,
+        fontSize: 13,
+        fontWeight: '500',
+    },
 });
+
